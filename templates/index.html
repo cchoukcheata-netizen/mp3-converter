@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1020">
+<title>Media Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1020; --card:#181a30; --card2:#1f2240; --line:#2c3058;
+  --text:#eef0ff; --muted:#9aa0c8; --accent:#7c5cff; --accent2:#ff5c9d;
+  --ok:#34d399; --err:#ff6b6b; --radius:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:"Noto Sans Khmer","Inter",system-ui,sans-serif;
+  background:radial-gradient(1200px 600px at 10% -10%,#2a1f6b55,transparent),
+             radial-gradient(900px 500px at 100% 0%,#6b1f4a44,transparent),var(--bg);
+  color:var(--text); min-height:100vh; line-height:1.6;
+  padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+}
+.wrap{max-width:880px;margin:0 auto}
+header{text-align:center;padding:20px 0 14px}
+.logo{display:inline-grid;place-items:center;width:64px;height:64px;border-radius:20px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:30px;
+  box-shadow:0 10px 30px #7c5cff55}
+h1{font-size:clamp(22px,5vw,32px);margin:12px 0 2px}
+header p{color:var(--muted);margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-top:16px}
+.tabs{display:flex;gap:6px;background:var(--card2);padding:5px;border-radius:14px}
+.tab{flex:1;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:500;
+  padding:10px 6px;border-radius:10px;cursor:pointer;transition:.2s;font-size:15px}
+.tab.active{background:linear-gradient(135deg,var(--accent),#5b8cff);color:#fff;box-shadow:0 4px 14px #7c5cff55}
+.panel{display:none;margin-top:16px}
+.panel.active{display:block}
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:34px 16px;text-align:center;
+  cursor:pointer;transition:.2s;background:var(--card2)}
+.drop.over,.drop:hover{border-color:var(--accent);background:#25285055}
+.drop .big{font-size:40px}
+.drop b{display:block;margin-top:6px}
+.drop small{color:var(--muted)}
+input[type=file]{display:none}
+input[type=url]{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card2);color:var(--text);font:inherit;font-size:16px;outline:none}
+input[type=url]:focus{border-color:var(--accent)}
+.check{display:flex;gap:10px;align-items:flex-start;margin:12px 0;color:var(--muted);font-size:14px}
+.check input{margin-top:5px;width:18px;height:18px;accent-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  border:0;border-radius:14px;padding:14px 18px;font:inherit;font-weight:700;font-size:16px;
+  color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  transition:.15s;box-shadow:0 8px 22px #7c5cff44}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn.ghost{background:var(--card2);box-shadow:none;border:1px solid var(--line);color:var(--text)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1;min-width:140px}
+.status{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--card2);display:none;font-size:15px}
+.status.show{display:block}
+.status.err{color:var(--err);border:1px solid #ff6b6b55}
+.status.ok{color:var(--ok);border:1px solid #34d39955}
+.bar{height:8px;background:#0003;border-radius:99px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s}
+.bar.indet i{width:40%;animation:ind 1.1s infinite ease-in-out}
+@keyframes ind{0%{margin-left:-40%}100%{margin-left:100%}}
+/* recorder */
+.rec{text-align:center;padding:10px 0}
+.mic{width:110px;height:110px;border-radius:50%;border:0;cursor:pointer;font-size:44px;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 10px 30px #7c5cff55;
+  transition:.2s;position:relative}
+.mic.on{background:linear-gradient(135deg,#ff4d4d,#ff7a59);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 #ff4d4d88}70%{box-shadow:0 0 0 24px #ff4d4d00}100%{box-shadow:0 0 0 0 #ff4d4d00}}
+.timer{font-family:"Inter",monospace;font-size:34px;font-weight:700;margin:14px 0 2px;letter-spacing:1px}
+.hint{color:var(--muted);font-size:14px}
+canvas#meter{width:100%;max-width:420px;height:56px;margin:10px auto 0;display:block}
+.preview{margin-top:14px;display:none}
+.preview.show{display:block}
+audio{width:100%;margin-top:8px}
+/* format selector */
+.fmt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.fmtlabel{color:var(--muted);font-size:14px;width:100%}
+.fmt button{flex:1;min-width:90px;border:1px solid var(--line);background:var(--card2);color:var(--text);
+  font:inherit;font-weight:600;padding:10px;border-radius:12px;cursor:pointer;transition:.15s}
+.fmt button.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff}
+.fmt button:disabled{opacity:.35;cursor:not-allowed}
+video{width:100%;max-height:360px;border-radius:10px;margin-top:8px;background:#000}
+/* library */
+.lib-head{display:flex;justify-content:space-between;align-items:center}
+.lib-head h2{margin:0;font-size:18px}
+.badge{background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:13px;color:var(--muted)}
+.item{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+.item .t{font-weight:700;word-break:break-word}
+.item .m{color:var(--muted);font-size:13px;margin:2px 0 6px}
+.item .acts{display:flex;gap:8px;margin-top:8px}
+.item .acts a,.item .acts button{flex:1;text-align:center;text-decoration:none;border:1px solid var(--line);
+  background:var(--card);color:var(--text);padding:9px;border-radius:10px;font:inherit;font-size:14px;cursor:pointer}
+.item .acts a.dl{background:linear-gradient(135deg,var(--accent),#5b8cff);border:0;color:#fff}
+.item .acts button.del{color:var(--err)}
+.empty{text-align:center;color:var(--muted);padding:24px 0}
+footer{text-align:center;color:var(--muted);font-size:12.5px;margin:22px 0 6px}
+@media (min-width:720px){.card{padding:24px}.tab{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🎵</div>
+    <h1>បម្លែងឯកសារ MP3 · WAV · MP4</h1>
+    <p>Upload ឯកសារ · តំណ Facebook / YouTube · ថតសំឡេង</p>
+  </header>
+
+  <section class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="file">📁 ឯកសារ</button>
+      <button class="tab" data-tab="link">🔗 តំណ</button>
+      <button class="tab" data-tab="rec">🎙️ ថតសំឡេង</button>
+    </div>
+
+    <div class="fmt" id="fmt">
+      <span class="fmtlabel">ទ្រង់ទ្រាយលទ្ធផល:</span>
+      <button data-fmt="mp3" class="active">🎵 MP3</button>
+      <button data-fmt="wav">🎼 WAV</button>
+      <button data-fmt="mp4">🎬 MP4</button>
+    </div>
+
+    <!-- FILE -->
+    <div class="panel active" id="panel-file">
+      <label class="drop" id="drop" for="fileInput">
+        <div class="big">🎬</div>
+        <b id="dropText">ចុចដើម្បីជ្រើសរើស ឬអូសឯកសារវីដេអូមកទីនេះ</b>
+        <small>MP4, MKV, MOV, AVI, WEBM ...</small>
+      </label>
+      <input type="file" id="fileInput" accept="video/*,audio/*">
+      <div style="height:12px"></div>
+      <button class="btn" id="btnFile" disabled>🎵 បម្លែងទៅជា <span class="fmtname">MP3</span></button>
+    </div>
+
+    <!-- LINK -->
+    <div class="panel" id="panel-link">
+      <input type="url" id="fbUrl" placeholder="បិទភ្ជាប់តំណ Facebook ឬ YouTube នៅទីនេះ" inputmode="url" autocomplete="off">
+      <div class="hint" style="margin-top:6px">ឧ. https://www.facebook.com/... · https://youtu.be/... · https://www.youtube.com/watch?v=...</div>
+      <label class="check">
+        <input type="checkbox" id="fbOk">
+        <span>ខ្ញុំបញ្ជាក់ថាខ្ញុំជាម្ចាស់ ឬមានសិទ្ធិ/ការអនុញ្ញាតឱ្យទាញយកមាតិកានេះ។ សូមគោរពសិទ្ធិអ្នកបង្កើត។</span>
+      </label>
+      <button class="btn" id="btnLink">🔗 ទាញយក និងបម្លែងជា <span class="fmtname">MP3</span></button>
+    </div>
+
+    <!-- RECORD -->
+    <div class="panel" id="panel-rec">
+      <div class="rec">
+        <button class="mic" id="btnMic" aria-label="ចាប់ផ្តើមថត">🎙️</button>
+        <div class="timer" id="timer">00:00</div>
+        <div class="hint" id="recHint">ចុចប៊ូតុងដើម្បីចាប់ផ្តើមថតសំឡេង</div>
+        <canvas id="meter" width="420" height="56"></canvas>
+      </div>
+      <div class="preview" id="recPreview">
+        <b>🎧 ស្តាប់សំឡេងដែលបានថត</b>
+        <audio id="recAudio" controls></audio>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="btnRecSave">💾 បម្លែងជា <span class="fmtname">MP3</span> ហើយរក្សាទុក</button>
+          <button class="btn ghost" id="btnRecReset">🔄 ថតឡើងវិញ</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status" id="status"><span id="statusText"></span><div class="bar" id="bar"><i></i></div></div>
+  </section>
+
+  <section class="card">
+    <div class="lib-head"><h2>📚 បណ្ណាល័យ</h2><span class="badge" id="count">0</span></div>
+    <div id="list"><div class="empty">មិនទាន់មានឯកសារទេ</div></div>
+  </section>
+
+  <footer>សូមប្រើសម្រាប់មាតិកាដែលអ្នកមានសិទ្ធិប៉ុណ្ណោះ · ការថតសំឡេងត្រូវការ HTTPS ឬ localhost</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const statusBox = $('#status'), statusText = $('#statusText'), bar = $('#bar'), barFill = $('#bar i');
+
+/* ---------- tabs ---------- */
+let fmt = 'mp3', currentTab = 'file';
+function updateFmtUI() {
+  const noVideo = currentTab === 'rec'; // ការថតសំឡេងគ្មានវីដេអូ
+  document.querySelector('[data-fmt="mp4"]').disabled = noVideo;
+  if (noVideo && fmt === 'mp4') fmt = 'mp3';
+  document.querySelectorAll('#fmt button').forEach(b => b.classList.toggle('active', b.dataset.fmt === fmt));
+  document.querySelectorAll('.fmtname').forEach(s => s.textContent = fmt.toUpperCase());
+}
+document.querySelectorAll('#fmt button').forEach(b => b.onclick = () => {
+  if (b.disabled) return; fmt = b.dataset.fmt; updateFmtUI();
+});
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  currentTab = t.dataset.tab; updateFmtUI();
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + t.dataset.tab));
+  hideStatus();
+});
+
+/* ---------- status helpers ---------- */
+function showStatus(msg, kind = '', progress = null) {
+  statusBox.className = 'status show ' + kind;
+  statusText.textContent = msg;
+  if (progress === null) { bar.style.display = 'none'; }
+  else {
+    bar.style.display = 'block';
+    bar.classList.toggle('indet', progress < 0);
+    barFill.style.width = progress < 0 ? '' : progress + '%';
+  }
+}
+function hideStatus() { statusBox.className = 'status'; }
+
+/* ---------- jobs ---------- */
+function pollJob(id) {
+  return new Promise((resolve, reject) => {
+    const tick = async () => {
+      try {
+        const r = await fetch('/api/jobs/' + id);
+        const j = await r.json();
+        if (j.status === 'done') return resolve(j);
+        if (j.status === 'error') return reject(new Error(j.message));
+        showStatus('⏳ ' + (j.message || 'កំពុងដំណើរការ...'), '', -1);
+        setTimeout(tick, 1000);
+      } catch (e) { reject(e); }
+    };
+    tick();
+  });
+}
+async function finish(jobId) {
+  try {
+    await pollJob(jobId);
+    showStatus('✅ បម្លែងរួចរាល់ ហើយបានរក្សាទុកក្នុងបណ្ណាល័យ', 'ok');
+    loadLibrary();
+    return true;
+  } catch (e) {
+    showStatus('❌ ' + e.message, 'err');
+    return false;
+  }
+}
+function uploadBlob(blob, filename) {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append('file', blob, filename);
+    fd.append('format', fmt);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/convert/file');
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) showStatus('⬆️ កំពុង upload ' + Math.round(e.loaded / e.total * 100) + '%', '', e.loaded / e.total * 100);
+    };
+    xhr.onload = () => {
+      let j = {}; try { j = JSON.parse(xhr.responseText); } catch (_) {}
+      xhr.status === 200 && j.job ? resolve(j.job) : reject(new Error(j.error || 'Upload មិនបានជោគជ័យ'));
+    };
+    xhr.onerror = () => reject(new Error('មិនអាចភ្ជាប់ទៅ server បានទេ'));
+    xhr.send(fd);
+  });
+}
+
+/* ---------- file tab ---------- */
+let chosen = null;
+const fileInput = $('#fileInput'), drop = $('#drop'), btnFile = $('#btnFile');
+function setFile(f) {
+  chosen = f;
+  $('#dropText').textContent = f ? '📄 ' + f.name + ' (' + fmtSize(f.size) + ')' : 'ចុចដើម្បីជ្រើសរើស ឬអូសឯកសារវីដេអូមកទីនេះ';
+  btnFile.disabled = !f;
+}
+fileInput.onchange = () => setFile(fileInput.files[0] || null);
+['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', ev => { if (ev.dataTransfer.files[0]) setFile(ev.dataTransfer.files[0]); });
+btnFile.onclick = async () => {
+  if (!chosen) return;
+  btnFile.disabled = true;
+  try { await finish(await uploadBlob(chosen, chosen.name)); setFile(null); fileInput.value = ''; }
+  catch (e) { showStatus('❌ ' + e.message, 'err'); btnFile.disabled = false; }
+};
+
+/* ---------- link tab ---------- */
+$('#btnLink').onclick = async () => {
+  const url = $('#fbUrl').value.trim();
+  if (!url) return showStatus('❌ សូមបិទភ្ជាប់តំណ Facebook ឬ YouTube', 'err');
+  if (!$('#fbOk').checked) return showStatus('❌ សូមធីកបញ្ជាក់ថាអ្នកមានសិទ្ធិទាញយកមាតិកានេះ', 'err');
+  const btn = $('#btnLink'); btn.disabled = true;
+  showStatus('⏳ កំពុងចាប់ផ្តើម...', '', -1);
+  try {
+    const r = await fetch('/api/convert/link', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, confirm: true, format: fmt })
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'មានបញ្ហា');
+    if (await finish(j.job)) $('#fbUrl').value = '';
+  } catch (e) { showStatus('❌ ' + e.message, 'err'); }
+  btn.disabled = false;
+};
+
+/* ---------- recorder ---------- */
+const btnMic = $('#btnMic'), timerEl = $('#timer'), recHint = $('#recHint');
+const recPreview = $('#recPreview'), recAudio = $('#recAudio'), meter = $('#meter');
+let mediaRec = null, stream = null, chunks = [], recBlob = null, recExt = 'webm';
+let t0 = 0, tInt = null, audioCtx = null, analyser = null, raf = null;
+
+function pickMime() {
+  const opts = [['audio/webm;codecs=opus', 'webm'], ['audio/webm', 'webm'], ['audio/mp4', 'm4a'], ['audio/ogg;codecs=opus', 'ogg']];
+  for (const [m, e] of opts) if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return { mime: m, ext: e };
+  return { mime: '', ext: 'webm' };
+}
+function fmtTime(s) { return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+
+function drawMeter() {
+  const ctx = meter.getContext('2d'), w = meter.width, h = meter.height;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  const loop = () => {
+    analyser.getByteFrequencyData(data);
+    ctx.clearRect(0, 0, w, h);
+    const bars = 40, step = Math.floor(data.length / bars), bw = w / bars;
+    for (let i = 0; i < bars; i++) {
+      const v = data[i * step] / 255, bh = Math.max(3, v * h);
+      const g = ctx.createLinearGradient(0, h, 0, 0);
+      g.addColorStop(0, '#7c5cff'); g.addColorStop(1, '#ff5c9d');
+      ctx.fillStyle = g;
+      ctx.fillRect(i * bw + 2, (h - bh) / 2, bw - 4, bh);
+    }
+    raf = requestAnimationFrame(loop);
+  };
+  loop();
+}
+function stopMeter() {
+  cancelAnimationFrame(raf);
+  meter.getContext('2d').clearRect(0, 0, meter.width, meter.height);
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+}
+async function startRec() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return showStatus('❌ Browser នេះមិនគាំទ្រការថតសំឡេង ឬត្រូវការ HTTPS/localhost', 'err');
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+  } catch (e) {
+    return showStatus('❌ មិនអាចប្រើ microphone បានទេ។ សូមអនុញ្ញាតសិទ្ធិ microphone ក្នុង browser។', 'err');
+  }
+  hideStatus(); resetRec(true);
+  const { mime, ext } = pickMime(); recExt = ext;
+  mediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  chunks = [];
+  mediaRec.ondataavailable = e => e.data.size && chunks.push(e.data);
+  mediaRec.onstop = () => {
+    recBlob = new Blob(chunks, { type: mediaRec.mimeType || 'audio/webm' });
+    recAudio.src = URL.createObjectURL(recBlob);
+    recPreview.classList.add('show');
+    stream.getTracks().forEach(t => t.stop());
+    stopMeter();
+  };
+  mediaRec.start(250);
+  // meter
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser(); analyser.fftSize = 256;
+  audioCtx.createMediaStreamSource(stream).connect(analyser);
+  drawMeter();
+  t0 = Date.now();
+  tInt = setInterval(() => timerEl.textContent = fmtTime(Math.floor((Date.now() - t0) / 1000)), 250);
+  btnMic.classList.add('on'); btnMic.textContent = '⏹️';
+  recHint.textContent = 'កំពុងថត... ចុចម្តងទៀតដើម្បីបញ្ឈប់';
+}
+function stopRec() {
+  if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
+  clearInterval(tInt);
+  btnMic.classList.remove('on'); btnMic.textContent = '🎙️';
+  recHint.textContent = 'ថតរួចរាល់ — ស្តាប់ ហើយរក្សាទុកបាន';
+}
+function resetRec(keepTimer) {
+  recBlob = null; recPreview.classList.remove('show'); recAudio.removeAttribute('src');
+  if (!keepTimer) { timerEl.textContent = '00:00'; recHint.textContent = 'ចុចប៊ូតុងដើម្បីចាប់ផ្តើមថតសំឡេង'; }
+}
+btnMic.onclick = () => (mediaRec && mediaRec.state === 'recording') ? stopRec() : startRec();
+$('#btnRecReset').onclick = () => resetRec(false);
+$('#btnRecSave').onclick = async () => {
+  if (!recBlob) return;
+  const btn = $('#btnRecSave'); btn.disabled = true;
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const name = `ថតសំឡេង ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}.${recExt}`;
+  try { if (await finish(await uploadBlob(recBlob, name))) resetRec(false); }
+  catch (e) { showStatus('❌ ' + e.message, 'err'); }
+  btn.disabled = false;
+};
+
+/* ---------- library ---------- */
+function fmtSize(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+const srcLabel = { upload: '📁 ឯកសារ', facebook: '🔗 Facebook', youtube: '▶️ YouTube', record: '🎙️ ថតសំឡេង' };
+async function loadLibrary() {
+  const items = await (await fetch('/api/library')).json();
+  $('#count').textContent = items.length;
+  const list = $('#list'); list.innerHTML = '';
+  if (!items.length) { list.innerHTML = '<div class="empty">មិនទាន់មានឯកសារទេ</div>'; return; }
+  for (const it of items) {
+    const el = document.createElement('div'); el.className = 'item';
+    const t = document.createElement('div'); t.className = 't'; t.textContent = it.title;
+    const m = document.createElement('div'); m.className = 'm';
+    const src = srcLabel[it.source] || '';
+    m.textContent = `${src} · ${(it.format || 'mp3').toUpperCase()} · ${fmtSize(it.size)} · ${new Date(it.created * 1000).toLocaleString('km-KH')}`;
+    const isVid = it.format === 'mp4';
+    const au = document.createElement(isVid ? 'video' : 'audio'); au.controls = true; au.preload = 'none'; au.src = '/files/' + it.id;
+    if (isVid) au.playsInline = true;
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const dl = document.createElement('a'); dl.className = 'dl'; dl.href = '/files/' + it.id + '?dl=1'; dl.textContent = '⬇️ ទាញយក';
+    const del = document.createElement('button'); del.className = 'del'; del.textContent = '🗑️ លុប';
+    del.onclick = async () => {
+      if (!confirm('លុបឯកសារនេះ?')) return;
+      await fetch('/api/library/' + it.id, { method: 'DELETE' }); loadLibrary();
+    };
+    acts.append(dl);
+    if (it.url) {
+      const o = document.createElement('a'); o.href = it.url; o.target = '_blank'; o.rel = 'noopener noreferrer';
+      o.textContent = '🔗 តំណដើម'; acts.append(o);
+    }
+    acts.append(del);
+    el.append(t, m, au, acts); list.append(el);
+  }
+}
+loadLibrary();
+</script>
+</body>
+</html>
